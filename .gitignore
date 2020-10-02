@@ -1,0 +1,5 @@
+strimzi-cluster-operator-*.yaml*
+kind
+.vscode
+.project
+.settings
