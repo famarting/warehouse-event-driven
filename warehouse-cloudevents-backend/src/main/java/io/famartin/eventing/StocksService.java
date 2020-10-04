@@ -1,5 +1,7 @@
 package io.famartin.eventing;
 
+import java.util.List;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -21,8 +23,12 @@ public class StocksService {
     @RestClient
     StocksClient stocksClient;
 
-    public Uni<StockRecord> requestStock(String requestId, String itemId, int quantity) {
-        return send(requestId, itemId, quantity, "SUBSTRACT");
+    public List<StockRecord> status() {
+        return stocksClient.status();
+    }
+
+    public Uni<StockRecord> addStock(String requestId, String itemId, int quantity) {
+        return send(requestId, itemId, quantity, "ADD");
     }
  
     private Uni<StockRecord> send(String requestId, String itemId, int quantity, String action) {

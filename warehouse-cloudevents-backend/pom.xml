@@ -1,12 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project>
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.famartin</groupId>
-    <artifactId>warehouse-event-driven-parent</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
+    <parent>
+        <groupId>io.famartin</groupId>
+        <artifactId>warehouse-event-driven-parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../</relativePath>
+    </parent>
+
+    <groupId>io.famartin</groupId>
+    <artifactId>warehouse-cloudevents-backend</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <properties>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -14,21 +20,12 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
-        <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
-
-        <quarkus.platform.version>1.8.1.Final</quarkus.platform.version>
         <quarkus-plugin.version>1.8.1.Final</quarkus-plugin.version>
-
+        <quarkus.platform.artifact-id>quarkus-universe-bom</quarkus.platform.artifact-id>
+        <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
+        <quarkus.platform.version>1.8.1.Final</quarkus.platform.version>
+        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     </properties>
-    <modules>
-        <module>warehouse-common</module>
-        <module>warehouse-cloudevents-backend</module>
-        <module>orders-processor-function</module>
-        <module>stocks-service-cloudevents</module>
-    </modules>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -40,7 +37,70 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+    <dependencies>
 
+        <dependency>
+            <groupId>io.famartin</groupId>
+            <artifactId>warehouse-common</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-mutiny</artifactId>
+        </dependency>        
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-resteasy-jackson</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-health</artifactId>
+        </dependency>
+
+        <dependency>
+    		<groupId>io.cloudevents</groupId>
+    		<artifactId>cloudevents-api</artifactId>
+    		<version>2.0.0-milestone3</version>
+        </dependency>
+        <dependency>
+            <groupId>io.cloudevents</groupId>
+            <artifactId>cloudevents-http-restful-ws</artifactId>
+            <version>2.0.0-milestone3</version>
+        </dependency>
+        <!-- <dependency>
+            <groupId>io.cloudevents</groupId>
+            <artifactId>cloudevents-http-basic</artifactId>
+            <version>2.0.0-milestone3</version>
+        </dependency> -->
+        <!-- <dependency>
+            <groupId>io.cloudevents</groupId>
+            <artifactId>cloudevents-http-vertx</artifactId>
+            <version>2.0.0-milestone3</version>
+        </dependency> -->
+        <dependency>
+            <groupId>io.cloudevents</groupId>
+            <artifactId>cloudevents-json-jackson</artifactId>
+            <version>2.0.0-milestone3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-kubernetes-client</artifactId>
+        </dependency>
+
+    </dependencies>
     <build>
         <plugins>
             <plugin>
@@ -50,8 +110,8 @@
                 <executions>
                     <execution>
                         <goals>
-                            <!-- <goal>generate-code</goal> -->
-                            <!-- <goal>generate-code-tests</goal> -->
+                            <goal>generate-code</goal>
+                            <goal>generate-code-tests</goal>
                             <goal>build</goal>
                         </goals>
                     </execution>
@@ -109,5 +169,4 @@
             </properties>
         </profile>
     </profiles>
-
 </project>

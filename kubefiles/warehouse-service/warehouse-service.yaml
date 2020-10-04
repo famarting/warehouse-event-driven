@@ -19,12 +19,12 @@ spec:
     spec:
       serviceAccount: warehouse
       containers:
-      - image: quay.io/famargon/warehouse-service-kafka:latest
+      - image: quay.io/famargon/warehouse-cloudevents-backend-event-driven:latest
         imagePullPolicy: Always
         name: warehouse-service
         env:
-          - name: KAFKA_BOOTSTRAP_SERVERS
-            value: warehouse-kafka-kafka-bootstrap:9092
+          - name: CE_BROKER_URL
+            value: http://kafka-broker-ingress.knative-eventing.svc.cluster.local/warehouse/default
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -34,14 +34,14 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 8080
+            port: 8082
           initialDelaySeconds: 3
           periodSeconds: 5
           timeoutSeconds: 7
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 8080
+            port: 8082
           initialDelaySeconds: 1
           periodSeconds: 15
           timeoutSeconds: 7
@@ -55,9 +55,13 @@ metadata:
   namespace: warehouse
 spec:
   ports:    
-  - port: 8080
+  - port: 8082
     protocol: TCP
-    targetPort: 8080
+    targetPort: 8082
+    name: app
+  - port: 80
+    protocol: TCP
+    targetPort: 8082
     name: http
   selector:
     app: warehouse-service

@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   annotations:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+    # nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
   labels:
@@ -16,5 +17,6 @@ spec:
       paths:
       - backend:
           serviceName: warehouse-service
-          servicePort: 8080
+          servicePort: 8082
         path: /
+        # path: /warehouse(/|$)(.*)

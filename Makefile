@@ -1,7 +1,7 @@
 TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 include $(TOPDIR)/Makefile.env.mk
 
-SERVICES = orders-processor-function
+SERVICES = orders-processor-function warehouse-cloudevents-backend stocks-service-cloudevents
 
 container: common $(SERVICES) 
 

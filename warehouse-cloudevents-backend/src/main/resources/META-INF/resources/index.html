@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Warehouse UI</title>
+
+    <link rel="stylesheet" type="text/css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly.min.css">
+    <link rel="stylesheet" type="text/css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly-additions.min.css">
+</head>
+
+<body>
+    <div class="container" id="cloud-info">
+        <div class="cloudprovider">Cloud: </div>
+        <div class="zone">Zone: </div>
+        <div class="pod">Pod: </div>
+    </div>
+
+    <div class="container">
+
+        <h1>Order</h1>
+    
+        <form id="orderForm" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="itemId">Item id</label>
+                <div class="col-md-6">
+                    <input type="text" id="itemId" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="quantity">Quantity</label>
+                <div class="col-md-6">
+                    <input type="number" id="quantity" class="form-control">
+                </div>
+            </div>
+            <!-- <div class="form-group">
+                <label class="col-md-2 control-label" for="product">Product</label>
+                <div class="col-md-10">
+                    <select id="product">
+                        <option value="frappuccino">Frappuccino</option>
+                        <option value="chai">Chai</option>
+                        <option value="hot-chocolate">Hot Chocolate</option>
+                        <option value="latte">Latte</option>
+                        <option value="espresso">Espresso</option>
+                        <option value="mocha">Mocha</option>
+                    </select>
+                </div>
+            </div> -->
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2">
+                    <button id="order-button" type="submit" class="btn btn-primary">Place order</button>
+                </div>
+            </div>
+        </form>
+    
+    </div>
+    
+    <div class="container" id="order-result-message"></div>
+
+    <div class="container">
+
+        <h1>Add stock</h1>
+    
+        <form id="stockForm" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="itemId">Item id</label>
+                <div class="col-md-6">
+                    <input type="text" id="itemId" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="quantity">Quantity</label>
+                <div class="col-md-6">
+                    <input type="number" id="quantity" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2">
+                    <button id="stock-button" type="submit" class="btn btn-primary">Increment stock</button>
+                </div>
+            </div>
+        </form>
+    
+    </div>
+
+    <div class="container">
+
+        <h1>Stock status</h1>
+
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Item id</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody id="stocksTable">
+
+            </tbody>
+        </table>
+
+    </div>
+
+    <div class="container">
+
+        <h1>Warehouse events</h1>
+
+        <table class="table table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Event Timestamp</th>
+                    <th>Event type</th>
+                    <th>Item id</th>
+                    <th>Quantity</th>
+                    <th>Processed By</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody id="eventsTable">
+
+            </tbody>
+        </table>
+
+    </div>
+
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/js/patternfly.min.js"></script>
+<script src="eventsource.js"></script>
+<script>
+
+    let backendUrl = "/api"
+
+    let warehouseServerHeader = "no_value"
+
+    let setupweb = function () {
+        $("#orderForm").submit(function(event){
+            const order = {
+                quantity: parseInt($("#orderForm #quantity").val()),
+                itemId: $("#orderForm #itemId").val()
+            };
+
+            $("#order-button").addClass("disabled").attr("disabled", true);
+
+            event.preventDefault();
+            const post_url = backendUrl+"/orders";
+            const request_method = "POST";
+            $.ajax({
+                url : post_url,
+                type: request_method,
+                data : JSON.stringify(order),
+                contentType: 'application/json',
+                cache: false,
+                timeout: 5000,
+            }).done(function(response){
+                $("#order-button").removeClass("disabled").removeAttr("disabled");
+                // alert("Order placed!");
+                $("#orderForm").trigger("reset");
+            }).fail(function(err) {
+                $("#order-result-message").append("<div class='alert alert-danger alert-dismissable'><button type='button' class='close' data-dismiss='alert' aria-label='Close'><span class='pficon pficon-close'></span></button><span class='pficon pficon-error-circle-o'></span><strong>Error</strong>" + err.responseText + "</div>");
+                $("#order-button").removeClass("disabled").removeAttr("disabled");
+                console.error(err);
+            });
+        });
+
+        let stocks = {};
+
+        let updateStocksTable = function () {
+            let stocksUrl = backendUrl+ "/stocks"
+            $.ajax({
+                contentType: 'application/json',
+                type: "GET",
+                url: stocksUrl,
+                timeout: 5000, // wait no more than 30 seconds
+            }).done(function(response){
+                response.forEach(event => {
+                    // $("#stocksTable").append(stockLine(element));
+                    if (stocks[event.itemId] !== undefined){
+                        //update
+                        $("#stocksTable #"+event.itemId).replaceWith(stockLine(event));
+                    } else {
+                        //append
+                        $("#stocksTable").prepend(stockLine(event));
+                    }
+                });
+            }).fail(function(err) {
+                console.error(err);
+            });
+        }
+
+        $("#stockForm").submit(function(event){
+            const order = {
+                quantity: parseInt($("#stockForm #quantity").val()),
+                itemId: $("#stockForm #itemId").val()
+            };
+
+            $("#stock-button").addClass("disabled").attr("disabled", true);
+
+            event.preventDefault();
+            const post_url = backendUrl+"/stocks";
+            const request_method = "POST";
+            $.ajax({
+                url : post_url,
+                type: request_method,
+                data : JSON.stringify(order),
+                contentType: 'application/json',
+                cache: false,
+                timeout: 5000
+            }).done(function(response){
+                $("#stock-button").removeClass("disabled").removeAttr("disabled");
+                // alert("Stock incremented!");
+                $("#stockForm").trigger("reset");
+                updateStocksTable()
+            }).fail(function(err) {
+                $("#stock-button").removeClass("disabled").removeAttr("disabled");
+                console.error(err);
+            });
+        });
+
+
+        updateStocksTable()
+        setInterval(() => updateStocksTable(), 2000)
+
+        function stockLine(event) {
+            stocks[event.itemId] = event;
+            const id = event.itemId;
+            const itemId = event.itemId;
+            const quantity = event.quantity;
+            return "<tr id='" + id + "'>" +
+                "<td>" + itemId + "</td>" +
+                "<td>" + quantity + "</td></tr>";
+        }
+
+        $(function () {
+
+            //polling
+            // let statusCall = function() {
+            //     $.ajax({
+            //         type: "GET",
+            //         url: "/warehouse/status/aaa",
+            //         timeout: 10000, // wait no more than 30 seconds
+            //     }).done(function(data){
+            //         console.log(data)
+            //         data.forEach(event => {
+            //             $("#eventsTable").prepend(line(event));
+            //             if (event.eventType === "STOCK") {
+            //                 if (stocks[event.itemId] !== undefined){
+            //                     //update
+            //                     $("#stocksTable #"+event.itemId).replaceWith(stockLine(event));
+            //                 } else {
+            //                     //append
+            //                     $("#stocksTable").prepend(stockLine(event));
+            //                 }
+            //             }
+            //         })
+            //     }).fail(function(err) {
+            //         console.error(err);
+            //     });
+            // }
+
+            // statusCall()
+            // setInterval(() => statusCall(), 2000)
+            
+
+            //sse
+            // const source = new EventSource("/warehouse/ssestatus");
+            // source.onmessage = function (e) {
+            //     if (e.data === "{}") {
+            //         return;
+            //     }
+            //     console.log(e);
+            //     let event = JSON.parse(e.data);
+            //     $("#eventsTable").prepend(line(event));
+            //     if (event.eventType === "STOCK") {
+            //         if (stocks[event.itemId] !== undefined){
+            //             //update
+            //             $("#stocksTable #"+event.itemId).replaceWith(stockLine(event));
+            //         } else {
+            //             //append
+            //             $("#stocksTable").prepend(stockLine(event));
+            //         }
+            //     }
+            // };
+
+            // SSE sending header
+            let statusUrl = backendUrl+"/status"
+            var source = new EventSource(statusUrl, {
+                headers: {
+                    'warehouse_server': warehouseServerHeader
+                }
+            });
+            source.onmessage = function (e) {
+                if (e.data === "{}") {
+                    return;
+                }
+                console.log(e);
+                let event = JSON.parse(e.data);
+                $("#eventsTable").prepend(line(event));
+                if (event.eventType === "STOCK") {
+                    if (stocks[event.itemId] !== undefined){
+                        //update
+                        $("#stocksTable #"+event.itemId).replaceWith(stockLine(event));
+                    } else {
+                        //append
+                        $("#stocksTable").prepend(stockLine(event));
+                    }
+                }
+            };
+
+        });
+
+        function line(event) {
+            const id = event.eventId;
+            const eventType = event.eventType;
+            const itemId = event.itemId;
+            const quantity = event.quantity;
+            const processedBy = event.processedBy;
+            let message = "";
+            if (event.message) {
+                message = event.message;
+            }
+            return "<tr id='" + id + "'>" +
+                "<td>" + event.timestamp + "</td>" +
+                "<td>" + eventType + "</td>" +
+                "<td>" + itemId + "</td>" +
+                "<td>" + quantity + "</td>" +
+                "<td>" + processedBy + "</td>" +
+                "<td>" + message + "</td></tr>";
+        }
+    }
+
+    let cloudmetaUrl = backendUrl+"/cloudmeta"
+    $.ajax({
+        contentType: 'application/json',
+        type: "GET",
+        url: cloudmetaUrl,
+        timeout: 5000, // wait no more than 30 seconds
+    }).done(function(response){
+        $(".cloudprovider").append("<b>" + response.cloud + "</b>");
+        $(".zone").append("<b>" + response.zone + "</b>");
+        $(".pod").append("<b>" + response.pod + "</b>");
+        warehouseServerHeader = response.pod
+        $.ajaxSetup({
+            beforeSend: function (xhr)
+            {
+            xhr.setRequestHeader("warehouse_server", response.pod);
+            }
+        });
+
+        setupweb()
+    }).fail(function(err) {
+        console.error(err);
+    });
+
+</script>
+
+</html>
