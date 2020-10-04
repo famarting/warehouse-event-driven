@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ${SERVICE_NAME}
+  name: ${SERVICE_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  # replicas: ${REPLICAS}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${SERVICE_NAME}
+  template:
+    metadata:
+      labels:
+        app: ${SERVICE_NAME}
+    spec:
+      containers:
+      - image: ${CONTAINER_IMAGE}
+        imagePullPolicy: Always
+        name: ${SERVICE_NAME}
+        env:
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: warehouse-kafka-kafka-bootstrap:9092
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MONGO_USER
+            value: admin
+          - name: MONGO_PWD
+            value: password
+          - name: MONGO_HOSTS
+            value: mongo-database:27017
+          - name: MONGO_TLS
+            value: 'false'
+          - name: MONGO_TLS_INSECURE
+            value: 'false'
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8081
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 7
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8081
+          initialDelaySeconds: 1
+          periodSeconds: 15
+          timeoutSeconds: 7
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ${SERVICE_NAME}
+  name: ${SERVICE_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  ports:    
+  - port: 8081
+    protocol: TCP
+    targetPort: 8081
+    name: http
+  selector:
+    app: ${SERVICE_NAME}
+  type: ClusterIP

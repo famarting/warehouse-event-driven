@@ -1,0 +1,14 @@
+apiVersion: eventing.knative.dev/v1beta1
+kind: Trigger
+metadata:
+  name: warehouse-backend-trigger
+  namespace: warehouse
+spec:
+  # this will trigger warehouse-service for all types of events
+  broker: default
+  subscriber:
+    ref:
+      apiVersion: v1
+      kind: Service
+      name: warehouse-service
+    uri: /cloudevents

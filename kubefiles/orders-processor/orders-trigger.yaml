@@ -6,8 +6,9 @@ metadata:
 spec:
   filter:
     attributes:
-      type: dev.knative.kafka.event 
-      source: /apis/v1/namespaces/warehouse/kafkasources/orders-kafka-source#orders
+      type: warehouse.order.v1
+      # type: dev.knative.kafka.event 
+      # source: /apis/v1/namespaces/warehouse/kafkasources/orders-kafka-source#orders
   broker: default
   subscriber:
     ref:

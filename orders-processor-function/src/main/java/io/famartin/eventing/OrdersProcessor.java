@@ -9,6 +9,7 @@ import javax.inject.Inject;
 
 import org.jboss.logging.Logger;
 
+import io.famartin.warehouse.common.CloudEventsBrokerClient;
 import io.famartin.warehouse.common.EventsService;
 import io.famartin.warehouse.common.OrderRecord;
 import io.quarkus.funqy.Funq;
@@ -26,7 +27,7 @@ public class OrdersProcessor {
     StocksService stocks;
 
     @Funq
-    @CloudEventMapping(trigger = "dev.knative.kafka.event", responseSource = "orders-service", responseType = "v1.warehouse.processed-orders")
+    @CloudEventMapping(trigger = CloudEventsBrokerClient.WAREHOUSE_ORDER_EVENT, responseSource = "orders-service", responseType = CloudEventsBrokerClient.WAREHOUSE_PROCESSED_ORDER_EVENT)
     public OrderRecord process(OrderRecord order) {
         if (order.getOrderId() == null ) {
             order.setOrderId(UUID.randomUUID().toString());

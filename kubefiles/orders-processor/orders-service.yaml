@@ -10,8 +10,8 @@ spec:
         - image: quay.io/famargon/orders-processor-function-event-driven:latest
           imagePullPolicy: Always
           env:
-            - name: KAFKA_BOOTSTRAP_SERVERS
-              value: warehouse-kafka-kafka-bootstrap:9092
+            - name: CE_BROKER_URL
+              value: http://kafka-broker-ingress.knative-eventing.svc.cluster.local/warehouse/default
             - name: POD_NAME
               value: orders-processor-serverless
             - name: STOCKS_SVC

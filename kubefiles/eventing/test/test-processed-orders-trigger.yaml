@@ -1,0 +1,15 @@
+apiVersion: eventing.knative.dev/v1beta1
+kind: Trigger
+metadata:
+  name: processed-orders
+  namespace: warehouse
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: warehouse.processed-order.v1
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1
+      kind: Service
+      name: event-display
