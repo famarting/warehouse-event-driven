@@ -39,11 +39,10 @@ endif
 kind-delete:
 	${KIND_CMD} delete cluster --name ${KIND_CLUSTER_NAME}
 
-setup: init-cluster install-eventing install-strimzi kafka-deployment kafka-channel
+setup-knative: init-cluster install-serving install-eventing install-strimzi kafka-deployment
 
 init-cluster:
 	kubectl create namespace warehouse
-	kubectl ns warehouse
 
 install-serving:
 	kubectl apply -f https://github.com/knative/serving/releases/download/v0.18.0/serving-crds.yaml
@@ -60,39 +59,28 @@ install-serving:
   		--type merge \
   		--patch '{"data":{"127.0.0.1.nip.io":""}}'
 
-install-strimzi:
-	wget https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-cluster-operator-0.18.0.yaml
-	sed -i 's/namespace: .*/namespace: warehouse/' strimzi-cluster-operator-0.18.0.yaml
-	kubectl apply -f strimzi-cluster-operator-0.18.0.yaml -n warehouse
-
-kafka-deployment:
-	kubectl apply -f kubefiles/kafka.yaml
-
 install-eventing:
 	kubectl apply --filename https://github.com/knative/eventing/releases/download/v0.18.0/eventing-crds.yaml
 	kubectl apply --filename https://github.com/knative/eventing/releases/download/v0.18.0/eventing-core.yaml
+	sleep 5
+
+install-strimzi:
+	kubectl create namespace kafka
+	curl -L "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.18.0/strimzi-cluster-operator-0.18.0.yaml" \
+		| sed 's/namespace: .*/namespace: kafka/' \
+		| kubectl apply -n kafka -f -
+	sleep 5
+
+kafka-deployment:
+	kubectl apply -n kafka -f kubefiles/eventing/kafka.yaml
+	echo "Please, wait until kafka broker is running and run \"make eventing-kafka-broker\""
+	kubectl get pod -n kafka
 
 eventing-kafka-broker:
 	curl -L "https://github.com/knative-sandbox/eventing-kafka-broker/releases/download/v0.18.0/eventing-kafka-controller.yaml" \
-		| sed 's/my-cluster-kafka-bootstrap.kafka:9092/warehouse-kafka-kafka-bootstrap.warehouse:9092/' \
+		| sed 's/my-cluster-kafka-bootstrap.kafka:9092/eventing-broker-kafka-bootstrap.kafka:9092/' \
  		| kubectl apply --filename -
 	kubectl apply --filename https://github.com/knative-sandbox/eventing-kafka-broker/releases/download/v0.18.0/eventing-kafka-broker.yaml
-	kubectl apply -f kubefiles/eventing/infra/knative-kafka-broker.yaml
-	kubectl get broker
-
-eventing-kafka-source:
-	kubectl apply -f https://github.com/knative/eventing-contrib/releases/download/v0.18.0/kafka-source.yaml
-
-# do not use
-# eventing-kafka-channel: eventing-kafka-source
-# 	curl -L "https://github.com/knative/eventing-contrib/releases/download/v0.18.0/kafka-channel.yaml" \
-#  		| sed 's/REPLACE_WITH_CLUSTER_URL/warehouse-kafka-kafka-bootstrap.warehouse:9092/' \
-#  		| kubectl apply --filename -
-# 	kubectl get pods -n knative-eventing
-# 	sleep 30
-# 	kubectl apply -f kubefiles/eventing/infra/knative-kafka-channel.yaml
-
-# kafka-channel:
-# 	curl -L "https://github.com/knative/eventing-contrib/releases/download/v0.18.0/kafka-channel.yaml" \
-#  		| sed 's/REPLACE_WITH_CLUSTER_URL/warehouse-kafka-kafka-bootstrap.warehouse:9092/' \
-#  		| kubectl apply --filename -
+	sleep 5
+	kubectl apply -f kubefiles/eventing/knative-kafka-broker.yaml
+	kubectl get broker -n warehouse
